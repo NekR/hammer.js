@@ -9,6 +9,7 @@ function PanRecognizer() {
 
     this.pX = null;
     this.pY = null;
+    this.lockedAxis = 0;
 }
 
 inherit(PanRecognizer, AttrRecognizer, {
@@ -37,31 +38,37 @@ inherit(PanRecognizer, AttrRecognizer, {
 
     directionTest: function(input) {
         var options = this.options;
-        var hasMoved = true;
-        var distance = input.distance;
-        var direction = input.direction;
-        var x = input.deltaX;
-        var y = input.deltaY;
+        // var distance = input.distance;
+        var x = Math.abs(input.deltaX);
+        var y = Math.abs(input.deltaY);
 
-        // lock to axis?
-        if (!(direction & options.direction)) {
-            if (options.direction & DIRECTION_HORIZONTAL) {
-                direction = (x === 0) ? DIRECTION_NONE : (x < 0) ? DIRECTION_LEFT : DIRECTION_RIGHT;
-                hasMoved = x != this.pX;
-                distance = Math.abs(input.deltaX);
-            } else {
-                direction = (y === 0) ? DIRECTION_NONE : (y < 0) ? DIRECTION_UP : DIRECTION_DOWN;
-                hasMoved = y != this.pY;
-                distance = Math.abs(input.deltaY);
-            }
+        if (x === 0 && y === 0) {
+          this.lockedAxis = 0;
+          return false;
         }
-        input.direction = direction;
-        return hasMoved && distance > options.threshold && direction & options.direction;
+
+        if (this.lockedAxis) {
+          return !!(this.lockedAxis & options.direction);
+        }
+
+        if (x > y && x > options.threshold) {
+          this.lockedAxis = DIRECTION_HORIZONTAL;
+        } else if (y > x && y > options.threshold) {
+          this.lockedAxis = DIRECTION_VERTICAL;
+        } else {
+          return false;
+        }
+
+        return !!(this.lockedAxis & options.direction);
     },
 
     attrTest: function(input) {
-        return AttrRecognizer.prototype.attrTest.call(this, input) &&
-            (this.state & STATE_BEGAN || (!(this.state & STATE_BEGAN) && this.directionTest(input)));
+      var attr = AttrRecognizer.prototype.attrTest.call(this, input);
+
+      return attr && (
+        this.state & STATE_BEGAN ||
+        (!(this.state & STATE_BEGAN) && this.directionTest(input))
+      );
     },
 
     emit: function(input) {

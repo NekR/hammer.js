@@ -74,7 +74,8 @@ module.exports = (grunt) ->
 
     jshint:
       options:
-        jshintrc: true
+        jshintrc: true,
+        reporterOutput: "",
       build:
         src: ['hammer.js']
 
@@ -120,5 +121,6 @@ module.exports = (grunt) ->
   grunt.registerTask 'default', ['connect', 'watch']
   grunt.registerTask 'default-test', ['connect', 'uglify:test', 'watch']
   grunt.registerTask 'build', ['concat', 'string-replace', 'uglify:min', 'usebanner', 'test']
+  grunt.registerTask 'build:force', ['concat', 'string-replace', 'uglify:min', 'usebanner']
   grunt.registerTask 'test', ['jshint', 'jscs', 'uglify:test', 'qunit']
   grunt.registerTask 'test-travis', ['build']
